@@ -25,6 +25,15 @@ WITH annual_facts AS (
       ON c.tag = v.tag AND c.uom = v.uom AND c.period_type = v.period_type
     WHERE v.is_annual
       AND v.qtrs IN (0, 4)
+      -- A 10-K also carries quarter-end balances in its notes (selected
+      -- quarterly data, subsequent events). Only the filing's own year end
+      -- and the comparatives one and two years earlier are fiscal years;
+      -- the 10-day slack absorbs 52/53-week calendars.
+      AND (
+            v.period_end = v.filing_period_end
+         OR abs(date_diff('day', v.period_end, v.filing_period_end) - 365) <= 10
+         OR abs(date_diff('day', v.period_end, v.filing_period_end) - 730) <= 10
+      )
 ),
 resolved AS (
     SELECT *
@@ -56,7 +65,9 @@ pivoted AS (
         max(CASE WHEN concept = 'current_assets'      THEN value END)       AS current_assets,
         max(CASE WHEN concept = 'current_liabilities' THEN value END)       AS current_liabilities,
         max(CASE WHEN concept = 'total_liabilities'   THEN value END)       AS total_liabilities_reported,
+        max(CASE WHEN concept = 'liabilities_and_equity' THEN value END)    AS liabilities_and_equity,
         max(CASE WHEN concept = 'equity'              THEN value END)       AS equity,
+        max(CASE WHEN concept = 'equity_total'        THEN value END)       AS equity_total_reported,
         max(CASE WHEN concept = 'retained_earnings'   THEN value END)       AS retained_earnings,
         max(CASE WHEN concept = 'cash'                THEN value END)       AS cash,
         max(CASE WHEN concept = 'long_term_debt'      THEN value END)       AS long_term_debt,
@@ -75,6 +86,10 @@ SELECT
     -- the single most common gap in this data.
     coalesce(p.gross_profit_reported, p.revenue - p.cost_of_revenue)        AS gross_profit,
     coalesce(p.total_liabilities_reported, p.total_assets - p.equity)       AS total_liabilities,
+    -- Equity including non-controlling interests where reported; parent-only
+    -- otherwise. NCI can be negative (Up-C structures), so the parent figure
+    -- alone can exceed total assets while the balance sheet still balances.
+    coalesce(p.equity_total_reported, p.equity)                             AS equity_total,
     p.current_assets - p.current_liabilities                                AS working_capital,
     p.operating_cash_flow - p.capex                                         AS free_cash_flow,
     f.filer_name,

@@ -8,6 +8,12 @@ to what SEC published and puts every type decision in one visible place.
 Loading is idempotent per quarter: rows tagged with that ``dataset`` are
 replaced, not appended. Columns are selected by name, so a file with extra
 columns (SEC has added some over the years) loads without changes.
+
+One column that must not be ignored: ``segments``. Since 2020 the data sets
+carry dimensional facts (revenue by segment, assets by geography,
+eliminations) in the same table as the consolidated totals, distinguished
+only by a non-empty segments value. Read them as totals and every
+aggregate downstream is wrong.
 """
 from __future__ import annotations
 
@@ -56,6 +62,7 @@ CREATE TABLE IF NOT EXISTS raw.num (
     tag       VARCHAR NOT NULL,
     version   VARCHAR NOT NULL,     -- taxonomy (us-gaap/2024) or the adsh for custom tags
     coreg     VARCHAR,              -- co-registrant; NULL means the consolidated entity
+    segments  VARCHAR,              -- dimensional qualifiers; NULL means the total, not a member
     ddate     DATE    NOT NULL,     -- period end
     qtrs      INTEGER NOT NULL,     -- 0 = instant, else duration in quarters
     uom       VARCHAR NOT NULL,
@@ -112,7 +119,7 @@ _SELECTS = {
         instance, TRY_CAST(nciks AS INTEGER), aciks
     """,
     "num": """
-        ? AS dataset, adsh, tag, version, nullif(coreg, ''),
+        ? AS dataset, adsh, tag, version, nullif(coreg, ''), nullif(segments, ''),
         TRY_STRPTIME(ddate, '%Y%m%d')::DATE, TRY_CAST(qtrs AS INTEGER), uom,
         TRY_CAST(value AS DOUBLE), nullif(footnote, '')
     """,
@@ -127,8 +134,21 @@ _SELECTS = {
 }
 
 
+class SchemaError(RuntimeError):
+    """The database on disk was created by an older version of this loader."""
+
+
 def ensure_raw_schema(con: duckdb.DuckDBPyConnection) -> None:
     con.execute(RAW_DDL)
+    # CREATE TABLE IF NOT EXISTS never alters an existing table. Rather than
+    # migrate in place, say so: the data is reproducible from cached archives.
+    cols = {r[0] for r in con.execute("SELECT column_name FROM information_schema.columns "
+                                      "WHERE table_schema = 'raw' AND table_name = 'num'").fetchall()}
+    if "segments" not in cols:
+        raise SchemaError(
+            "raw.num was created without the segments column by an earlier version. "
+            "Delete the database file and run `python -m efs load` again; archives in data/raw are reused."
+        )
 
 
 def extract(archive: Path, staging_dir: Path = config.STAGING_DIR) -> dict[str, Path]:

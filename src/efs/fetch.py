@@ -67,10 +67,16 @@ class Fetcher:
                         tmp.replace(path)
                         return
                     if resp.status_code == 403:
+                        hint = (
+                            "it contains the substring 'github', which SEC's bot filter rejects "
+                            "regardless of the rest of the string"
+                            if "github" in self.user_agent.lower()
+                            else "it must be of the form 'app-name contact@example.com'"
+                        )
                         raise FetchError(
-                            f"403 from {url}. Either the User-Agent lacks a contact address "
-                            f"(current: {self.user_agent!r}) or SEC has rate-limited this IP; "
-                            f"the block clears after about ten minutes."
+                            f"403 from {url}. SEC returns its 'Request Rate Threshold Exceeded' page "
+                            f"for any User-Agent it dislikes, not only for real rate limits. "
+                            f"Check the User-Agent (current: {self.user_agent!r}): {hint}."
                         )
                     if resp.status_code == 404:
                         raise FetchError(f"404: {url} (quarter not published yet?)")

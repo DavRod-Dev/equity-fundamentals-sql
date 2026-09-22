@@ -36,6 +36,11 @@ def user_agent() -> str:
             f'"app-name contact@example.com"; without an address it returns 403.\n'
             f"  set {USER_AGENT_ENV}=equity-fundamentals-sql you@example.com"
         )
+    if "github" in value.lower():
+        raise ConfigError(
+            f"{USER_AGENT_ENV} contains 'github'. SEC's bot filter rejects any User-Agent with that "
+            f"substring (HTTP 403), so an address like name.github@example.com cannot be used here."
+        )
     return value
 
 

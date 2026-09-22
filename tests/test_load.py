@@ -45,3 +45,11 @@ def test_fact_view_excludes_co_registrants_and_non_report_forms(warehouse):
     assert beta_assets == (5000e6,)
     assert q(warehouse, "SELECT count(*) FROM core.fact WHERE adsh = ?", A8K) == [(0,)]
     assert q(warehouse, "SELECT count(*) FROM core.fact WHERE cik = ?", ALPHA)[0][0] == 14 * 4 + 5   # two 10-Ks x (own year + comparative) + five 10-Q values
+
+
+def test_fact_view_excludes_dimensional_segment_rows(warehouse):
+    assert q(warehouse, "SELECT count(*) FROM raw.num WHERE segments IS NOT NULL")[0][0] == 2
+    rows = q(warehouse, """
+        SELECT value FROM core.fact WHERE cik = ? AND tag = 'Revenues' AND period_end = DATE '2024-12-31' AND qtrs = 4
+    """, ALPHA)
+    assert rows == [(1210e6,)]

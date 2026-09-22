@@ -112,7 +112,9 @@ def test_point_in_time_screen_respects_filing_dates(warehouse):
 
 
 def test_tag_adoption_counts_filers_per_tag(warehouse):
-    rows = {(r["fiscal_year"], r["tag"]): r["filers"] for r in query_rows(warehouse, "tag_adoption")}
+    # The population floor is a display choice for live data; the fixture has three filers.
+    rows = {(r["fiscal_year"], r["tag"]): r["filers"]
+            for r in query_rows(warehouse, "tag_adoption", **{"filers_in_year >= 100": "filers_in_year >= 1"})}
     assert rows[(2024, "Revenues")] == 2 and rows[(2024, "RevenuesNetOfInterestExpense")] == 1
 
 

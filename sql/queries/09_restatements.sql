@@ -26,6 +26,8 @@ JOIN (
 WHERE v.is_latest
   AND v.is_restated
   AND v.qtrs IN (0, 4)
+  AND c.uom = 'USD'                        -- share counts have their own scale problems
+  AND c.concept <> 'liabilities_and_equity' -- a check line; it restates whenever assets do
   AND abs(v.value - v.first_reported_value) >= 1e7
   AND abs(v.value / nullif(v.first_reported_value, 0) - 1) >= 0.01
 ORDER BY abs(v.value - v.first_reported_value) DESC

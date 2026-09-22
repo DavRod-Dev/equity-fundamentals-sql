@@ -3,6 +3,9 @@
 -- The three factors multiply back to ROE exactly, which the last column
 -- checks. Using average rather than closing balances is what makes the
 -- identity hold for a company whose balance sheet moved during the year.
+-- Ranked among filers with $100 million of revenue and average equity of at
+-- least 5 % of average assets: buybacks can drive book equity toward zero,
+-- and an equity multiplier of 300 says nothing about operations.
 WITH avg_bal AS (
     SELECT
         cik, filer_name, fiscal_year, revenue, net_income,
@@ -24,6 +27,6 @@ SELECT
     round((net_income / revenue) * (revenue / avg_assets) * (avg_assets / avg_equity)
           - net_income / avg_equity, 10)                                    AS identity_residual
 FROM avg_bal
-WHERE revenue > 0 AND avg_assets > 0 AND avg_equity > 0
+WHERE revenue >= 1e8 AND avg_assets > 0 AND avg_equity >= 0.05 * avg_assets
 QUALIFY row_number() OVER (PARTITION BY cik ORDER BY fiscal_year DESC) = 1
 ORDER BY roe DESC

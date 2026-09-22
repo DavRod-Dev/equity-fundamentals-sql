@@ -1,10 +1,16 @@
 -- view
 -- Every consolidated numeric value in every kept filing, with its filing context.
 --
--- coreg IS NULL restricts to the consolidated entity: FSDS also carries the
--- same tags for subsidiaries and co-registrants, and summing those with the
--- parent is a classic double-count. A 10-K contains prior-period comparatives
--- too, so one filing yields two or three fiscal years of values.
+-- Two filters do most of the work of this repository:
+--   coreg IS NULL     the consolidated entity, not a subsidiary or co-registrant
+--   segments IS NULL  the total, not a dimensional member (a segment, a
+--                     geography, an elimination line). Segment members live in
+--                     the same table with the same tag and period; read as
+--                     totals they produced a negative gross profit for Walmart
+--                     and $638 million of assets for JPMorgan in the first live
+--                     run of this code.
+-- A 10-K contains prior-period comparatives too, so one filing yields two or
+-- three fiscal years of values.
 SELECT
     n.dataset,
     n.adsh,
@@ -24,4 +30,5 @@ SELECT
 FROM raw.num AS n
 JOIN core.filing AS f USING (adsh)
 WHERE n.coreg IS NULL
+  AND n.segments IS NULL
   AND n.value IS NOT NULL

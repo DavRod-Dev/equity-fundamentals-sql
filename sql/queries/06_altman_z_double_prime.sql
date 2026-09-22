@@ -8,11 +8,14 @@
 -- Zones per Altman (1995): above 2.6 safe, 1.1 to 2.6 grey, below 1.1 distress.
 -- EBIT is operating income where reported, else pretax income plus interest.
 -- Financials (SIC 60-67) are excluded: the model was never meant for balance
--- sheets that are mostly customer deposits and loans.
+-- sheets that are mostly customer deposits and loans. So are filers with
+-- under $100 million of assets: shell companies with a few thousand dollars
+-- of assets and years of accumulated deficit produce Z-scores in the
+-- negative millions, which is arithmetic, not insight.
 WITH latest AS (
     SELECT *
     FROM core.annual
-    WHERE total_assets > 0
+    WHERE total_assets >= 1e8
       AND total_liabilities > 0
       AND sic2 NOT BETWEEN 60 AND 67
     QUALIFY row_number() OVER (PARTITION BY cik ORDER BY fiscal_year_end DESC) = 1

@@ -15,12 +15,22 @@ WITH annual_revenue_tags AS (
       AND v.is_annual
       AND v.qtrs = 4
       AND v.is_latest
+),
+counted AS (
+    SELECT
+        fiscal_year,
+        tag,
+        count(DISTINCT cik)                                                  AS filers,
+        sum(count(DISTINCT cik)) OVER (PARTITION BY fiscal_year)             AS filers_in_year
+    FROM annual_revenue_tags
+    GROUP BY fiscal_year, tag
 )
 SELECT
     fiscal_year,
     tag,
-    count(DISTINCT cik)                                                            AS filers,
-    round(count(DISTINCT cik) * 1.0 / sum(count(DISTINCT cik)) OVER (PARTITION BY fiscal_year), 3) AS share_of_filers
-FROM annual_revenue_tags
-GROUP BY fiscal_year, tag
-ORDER BY fiscal_year, filers DESC
+    filers,
+    round(filers / filers_in_year, 3) AS share_of_filers
+FROM counted
+-- Early years exist only as long-history comparatives from a few filers.
+WHERE filers_in_year >= 100
+ORDER BY fiscal_year DESC, filers DESC

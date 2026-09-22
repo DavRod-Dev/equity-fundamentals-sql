@@ -61,7 +61,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(runner.markdown_table(cols, rows))
         finally:
             con.close()
-    except (config.ConfigError, fetch.FetchError, FileNotFoundError) as exc:
+    except (config.ConfigError, fetch.FetchError, load.SchemaError, FileNotFoundError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     return 0

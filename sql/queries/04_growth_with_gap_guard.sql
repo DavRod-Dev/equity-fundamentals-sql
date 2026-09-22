@@ -3,7 +3,9 @@
 -- LAG reaches back one ROW, not one YEAR. If a filer is missing fiscal 2023,
 -- a naive LAG compares 2024 with 2022 and reports two years of growth as
 -- one. Every prior value here is wrapped in a check that the previous row
--- really is the previous fiscal year.
+-- really is the previous fiscal year. The ranking is restricted to filers
+-- with at least $100 million of prior-year revenue: 3,000 % growth off a
+-- $3 million base is a fact about the base, not the business.
 WITH lagged AS (
     SELECT
         cik,
@@ -28,5 +30,5 @@ SELECT
          THEN round(net_income / net_income_prior - 1, 3) END   AS net_income_growth,
     round((net_income - net_income_prior) / 1e6, 1)             AS net_income_change_mm
 FROM lagged
-WHERE revenue_prior IS NOT NULL
+WHERE revenue_prior >= 1e8
 ORDER BY revenue_growth DESC NULLS LAST

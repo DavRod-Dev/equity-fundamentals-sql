@@ -7,6 +7,8 @@ can be checked by hand (see EXPECTED at the bottom):
 
   Alpha Widgets   industrial, Dec year end, two 10-Ks and three 10-Qs;
                   one comparative restated; earns a Piotroski 8 of 9
+                  its FY2024 revenue also appears twice as segment members,
+                  which must never be read as totals
   Beta Bank       financial (excluded from Altman), reports revenue under
                   RevenuesNetOfInterestExpense and no Liabilities line
                   (exercises tag priority and the derived-liabilities rule);
@@ -24,9 +26,9 @@ from pathlib import Path
 
 SUB_COLS = ("adsh cik name sic countryba stprba cityba zipba bas1 bas2 baph countryma stprma cityba2 "
             "zipma mas1 mas2 countryinc stprinc ein former changed afs wksi fye form period fy fp filed "
-            "prevrpt detail instance nciks aciks").split()
+            "accepted prevrpt detail instance nciks aciks").split()
 SUB_COLS[SUB_COLS.index("cityba2")] = "cityma"
-NUM_COLS = "adsh tag version coreg ddate qtrs uom value footnote".split()
+NUM_COLS = "adsh tag version ddate qtrs uom segments coreg value footnote".split()
 TAG_COLS = "tag version custom abstract datatype iord crdr tlabel doc".split()
 PRE_COLS = "adsh report line stmt inpth rfile tag version plabel negating".split()
 
@@ -54,14 +56,14 @@ def sub_row(adsh, cik, name, sic, form, period, fy, fp, filed, fye="1231"):
     return r
 
 
-def facts(adsh, ddate, values, *, qtrs=None, coreg=""):
+def facts(adsh, ddate, values, *, qtrs=None, coreg="", segments=""):
     """values: {tag: millions}. qtrs defaults to 4 for durations, 0 for instants."""
     out = []
     for tag, mm in values.items():
         q = 0 if tag in INSTANT else (4 if qtrs is None else qtrs)
         uom = "shares" if tag == "CommonStockSharesOutstanding" else "USD"
-        out.append(dict(adsh=adsh, tag=tag, version=V, coreg=coreg, ddate=ddate, qtrs=q, uom=uom,
-                        value=int(mm * M), footnote=""))
+        out.append(dict(adsh=adsh, tag=tag, version=V, ddate=ddate, qtrs=q, uom=uom, segments=segments,
+                        coreg=coreg, value=int(mm * M), footnote=""))
     return out
 
 
@@ -108,6 +110,9 @@ def dataset_2025q1():
     ]
     nums = (
         facts(A24, "20241231", ALPHA_FY[2024]) + facts(A24, "20231231", ALPHA_2023_RESTATED)
+        # segment breakdown of the same revenue: dimensional rows, never totals
+        + facts(A24, "20241231", {"Revenues": 900}, segments="StatementBusinessSegmentsAxis=WidgetsMember;")
+        + facts(A24, "20241231", {"Revenues": 310}, segments="StatementBusinessSegmentsAxis=ServicesMember;")
         # 10-Qs: the quarter itself (qtrs=1) and year-to-date (qtrs=n)
         + facts(AQ1, "20240331", {"Revenues": 250}, qtrs=1)
         + facts(AQ2, "20240630", {"Revenues": 300}, qtrs=1) + facts(AQ2, "20240630", {"Revenues": 550}, qtrs=2)
