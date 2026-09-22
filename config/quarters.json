@@ -1,0 +1,4 @@
+{
+  "_comment": "SEC Financial Statement Data Set quarters to load, newest last. Four quarters cover one full filing cycle, and because every 10-K carries prior-year comparatives that yields two to three fiscal years per filer. Add older quarters for longer history.",
+  "quarters": ["2025q1", "2025q2", "2025q3", "2025q4"]
+}
