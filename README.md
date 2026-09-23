@@ -7,7 +7,7 @@ scores, sector percentiles, DuPont, quarterly figures derived from
 year-to-date filings, restatement detection and a point-in-time screen —
 all in SQL, all tested against hand-computed answers.
 
-[![ci](https://github.com/david-rodriguez-dev/equity-fundamentals-sql/actions/workflows/ci.yml/badge.svg)](https://github.com/david-rodriguez-dev/equity-fundamentals-sql/actions/workflows/ci.yml)
+[![ci](https://github.com/davrod-dev/equity-fundamentals-sql/actions/workflows/ci.yml/badge.svg)](https://github.com/davrod-dev/equity-fundamentals-sql/actions/workflows/ci.yml)
 
 Python does three things here — fetch, load, run files — in about 350
 lines. Everything with a financial opinion lives in [`sql/`](sql/).
@@ -15,7 +15,7 @@ lines. Everything with a financial opinion lives in [`sql/`](sql/).
 ## Quickstart
 
 ```bash
-git clone https://github.com/david-rodriguez-dev/equity-fundamentals-sql
+git clone https://github.com/davrod-dev/equity-fundamentals-sql
 cd equity-fundamentals-sql
 pip install -e ".[dev]"
 
@@ -321,4 +321,4 @@ fetching it.
 
 ---
 
-David Rodriguez · [github.com/david-rodriguez-dev](https://github.com/david-rodriguez-dev)
+David Rodriguez · [github.com/davrod-dev](https://github.com/davrod-dev)
